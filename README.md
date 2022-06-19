@@ -35,7 +35,7 @@ Significant Result:
 * ActiveClean raised that rate to 90 percent after cleaning only 5,000 records, 
 while the Active Learning method had to be applied to 50,000 records to achieve the same rate.
 
-
+Source: [GCN Article by Stephanie Kanowitz](https://gcn.com/data-analytics/2016/10/machine-learning-tool-cleans-dirty-data/299245/)
 # How can we build onto the existing research?
 
 We can first make the codebase for ActiveClean more accessible by making a Python package.
