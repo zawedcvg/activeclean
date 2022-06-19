@@ -13,9 +13,9 @@ the cleaning process becomes even more complex.
 
 Impact of poor cleaning on model accuracy is illustrated here:
 ![Image showing impact of poor cleaning, 
-which can be worse in skewing the model then not cleaning](Images/Impact of Poor Cleaning.png)
+which can be worse in skewing the model then not cleaning](Images/ImpactOfPoorCleaning.png)
 <p align="center">
-Source: [ActiveClean Website](https://activeclean.github.io/)
+Source: activeclean.github.io
 </p>
 
 # Solution: ActiveClean
