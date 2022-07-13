@@ -36,6 +36,9 @@ class DetectorSampler(BaseSamplerInterface):
         super().__init__(full_data, dirty_indices, batch_size)
         self.detector = detector
 
+    def updateDetector(self, detector):
+        self.detector = detector
+
     def sample(self):
         dirty_probability = self.detector.get_error_prob(self.dirty_indices, self.full_data)
         if dirty_probability is None:

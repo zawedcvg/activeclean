@@ -7,8 +7,10 @@ from activeclean.sampler import DetectorSampler, UniformSampler
 from activeclean.cleaner import Cleaner
 from activeclean.updater import Updater
 
+
 class ActiveCleanProcessor:
-    def __init__(self, user_clf, full_data, indices, batch_size, ownFilepath, step_size, featuriser, process_cleaned_df, calculate_loss):
+    def __init__(self, user_clf, full_data, indices, batch_size, ownFilepath, step_size, featuriser, process_cleaned_df,
+                 calculate_loss):
         """
         Initialises an ActiveClean object
         :param user_clf: A classifier that the user hopes to improve
@@ -23,6 +25,7 @@ class ActiveCleanProcessor:
         self.clean_indices = indices[1]
         self.test_indices = indices[2]
 
+        # training data to clean
         self.X_full = full_data[0]
         self.Y_full = full_data[1]
 
@@ -35,7 +38,7 @@ class ActiveCleanProcessor:
         self.calculate_loss = calculate_loss
 
         self.detector = Detector(SGDClassifier(loss="log", alpha=1e-6, max_iter=200, fit_intercept=True))
-        self.sampler = DetectorSampler(featuriser(self.X_full), self.dirty_indices, self.detector, batch_size)
+        self.detectorsampler = DetectorSampler(featuriser(self.X_full), self.dirty_indices, self.detector, batch_size)
         self.uniformsampler = UniformSampler(full_data, self.dirty_indices, batch_size)
         self.cleaner = Cleaner(process_cleaned_df, ownFilepath)
 
@@ -66,55 +69,44 @@ class ActiveCleanProcessor:
         user_want_to_keep_cleaning = 1
         while len(self.clean_indices) < num_records_to_clean and user_want_to_keep_cleaning:
             # Update data after cleaning
-            self.X_full, self.Y_full = self.cleaner.update_with_cleaned_data(self.X_full, self.Y_full, self.dirty_sample_indices)
+            self.X_full, self.Y_full = self.cleaner.update_with_cleaned_data(self.X_full, self.Y_full,
+                                                                             self.dirty_sample_indices)
 
             # Update data
             self.dirty_indices = [index for index in self.dirty_indices if index not in self.dirty_sample_indices]
             for index in self.dirty_sample_indices:
                 self.clean_indices.append(index)
 
-            # Update classifier
-            num_cleaned = len(self.clean_indices)
-            total_training_data_size = len(self.Y_full)
-            proportion_cleaned = num_cleaned / total_training_data_size  # excludes the data in sample which is cleaned
-            proportion_dirty = 1 - proportion_cleaned
-            proportions = (proportion_cleaned, proportion_dirty)
-
-            sample_X, sample_Y = [self.X_full[i] for i in self.dirty_sample_indices], [self.Y_full[i] for i in self.dirty_sample_indices]
-            cleaned_X, cleaned_Y = [self.X_full[i] for i in self.clean_indices], [self.Y_full[i] for i in self.clean_indices]
-
-            sample_data = (self.featuriser(sample_X), sample_Y)
-            cleaned_data = (self.featuriser(cleaned_X), cleaned_Y)
-
             # updater is work in progress
             updater = Updater(self.clf, self.batch_size, self.step_size, self.calculate_loss)
-            self.clf = updater.update(sample_data, self.sampling_prob, cleaned_data, proportions)
+            self.clf = updater.retrain(self.featuriser(self.X_full), self.Y_full)
 
             # Update user of clf report
             self.printReport()
 
             # Update detector sampler
             self.total_labels.extend([(index, True) for index in self.dirty_sample_indices])
-            self.detector = self.detector.update_classifier(self.total_labels, self.featuriser(self.X_full))
+            self.detector.update_classifier(self.total_labels, self.featuriser(self.X_full))
+            self.detectorsampler.updateDetector(self.detector)
 
             # Sample dirty data
-            self.dirty_sample_indices = self.detectorsampler.sample()
+            self.dirty_sample_indices, self.sampling_prob = self.detectorsampler.sample()
 
             # Provide dirty samples to user to clean
             self.cleaner.provide_sample(self.X_full, self.Y_full, self.dirty_sample_indices)
 
-            user_want_to_keep_cleaning = input("Continue? Return 1 if Yes or 0 if No")
+            user_want_to_keep_cleaning = input("Continue? Return 1 if Yes or 0 if No\n")
 
         print("Done")
 
     def printReport(self):
-         print(("Number Cleaned So Far ", len(self.clean_indices)))
-         x_test = self.featuriser([self.X_full[i] for i in self.test_indices])
-         y_test = [self.Y_full[i] for i in self.test_indices]
-         ypred = self.clf.predict(x_test)
-         print(("Prediction Freqs ", np.sum(ypred), np.shape(ypred)))
-         print((classification_report(y_test, ypred)))
-         print(("Accuracy ", accuracy_score(y_test, ypred)))
+        print(("Number Cleaned So Far ", len(self.clean_indices)))
+        x_test = self.featuriser([self.X_full[i] for i in self.test_indices])
+        y_test = [self.Y_full[i] for i in self.test_indices]
+        ypred = self.clf.predict(x_test)
+        print(("Prediction Freqs ", np.sum(ypred), np.shape(ypred)))
+        print((classification_report(y_test, ypred)))
+        print(("Accuracy ", accuracy_score(y_test, ypred)))
 
     def getClassifier(self):
         return self.clf

@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import pandas as pd
 """
 Seeks to find a vector of model parameters by minimising a loss function over all training examples
 ideal_model_param_vector = min(sum(loss) over N training examples) + get_regularisation_term(model_param_vector)
@@ -27,15 +28,18 @@ class Updater:
         self.batch_size = batch_size
         self.step_size = step_size
 
+    def retrain(self, cleaned_X, cleaned_Y):
+        return self.clf.partial_fit(cleaned_X, cleaned_Y)
+
     def get_gradients(self, data):
         X, Y = data[0], data[1]
         for x, y in zip(X, Y):
             # Open a GradientTape.
             with tf.GradientTape() as tape:
                 # Forward pass.
-                logits = self.clf.fit(x,y)
+                y_pred = self.clf.compile(x, y)
                 # Loss value for this batch.
-                loss_value = self.calculate_loss(y, logits)
+                loss_value = self.calculate_loss(y, y_pred)
 
             # Get gradients of loss wrt the weights.
             gradients = tape.gradient(loss_value, self.clf.trainable_weights)
