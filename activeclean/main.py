@@ -69,6 +69,5 @@ print("Done initialising")
 
 print("Starting retraining...")
 ActiveClean.runNextIteration(num_records_to_clean)
-print("Done retraining!")
 
-print("Done")
+

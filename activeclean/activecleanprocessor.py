@@ -95,7 +95,7 @@ class ActiveCleanProcessor:
             # Provide dirty samples to user to clean
             self.cleaner.provide_sample(self.X_full, self.Y_full, self.dirty_sample_indices)
 
-            user_want_to_keep_cleaning = input("Continue? Return 1 if Yes or 0 if No\n")
+            user_want_to_keep_cleaning = int(input("Continue? Return 1 if Yes or 0 if No\n"))
 
         print("Done")
 
